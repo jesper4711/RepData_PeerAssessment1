@@ -1,13 +1,9 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 ### Loading and preprocessing the data
-```{r loading, echo=TRUE}
+
+```r
 library(plyr)
 data <- read.csv("activity.csv")
 dailyact <- ddply(data, .(date), summarize, steps = sum(steps))
@@ -15,46 +11,51 @@ dailyact_mean <- as.character(round(mean(dailyact$steps,
                                          na.rm = TRUE),digits=2))
 dailyact_median <- median(dailyact$steps, na.rm = TRUE)
 ```
-Mean number of steps per day: `r dailyact_mean`
-Median number of steps per day: `r dailyact_median`
+Mean number of steps per day: 10766.19
+Median number of steps per day: 10765
 
 ### Histogram plot
-```{r hist_activity, fig.height=3, fig.width=4}
+
+```r
 hist(dailyact$steps, breaks=10, main="Histogram of steps/day", xlab="steps")
 ```
 
+![](PA1_template_files/figure-html/hist_activity-1.png) 
+
 ### What is the average daily activity pattern?
-```{r daily_pattern, fig.height=3, fig.width=4, echo=TRUE}
+
+```r
 daily_pattern <- ddply(data, .(interval), summarize, steps = mean(steps, na.rm=TRUE))
 max_steps <- max(daily_pattern$steps)
 max_int <- daily_pattern[daily_pattern$steps==max(max_steps),1]
 plot(daily_pattern,type="l")
-
 ```
-Interval with max number of steps: `r max_int`.
+
+![](PA1_template_files/figure-html/daily_pattern-1.png) 
+Interval with max number of steps: 835.
 
 ### Imputing missing values 
-```{r missing_values, echo=TRUE}
+
+```r
 ind_na <- which(is.na(data$steps))
 num_missing <- length(ind_na)
 missing_intervals <- data$interval[ind_na]
-medsteps <- ddply(data, .(interval), transform, steps = median(steps, na.rm=TRUE))
+medsteps <- ddply(data, .(interval), transform, steps = mean(steps, na.rm=TRUE))
 medact <- data
 medact[ind_na,1] <- medsteps[as.factor(data[ind_na,3]),2]
 dailyact <- ddply(medact, .(date), summarize, steps = sum(steps))
 medact_mean <- as.character(round(mean(dailyact$steps),digits=2))
 medact_median <- median(dailyact$steps)
-
 ```
-Number of missing rows: `r num_missing`. There are many possibilities for imputing missing values. One simple strategy is to exchange the missing value for each 5 minute interval with an aggregated value over the distribution of intervals over days. First thought was to use the mode (the most common value) of steps per interval, but it turns out that the mode in all cases equals zero, so it seems a bit boring choice. The next idea was to use the median, which was implemented above.
+Number of missing rows: 2304. There are many possibilities for imputing missing values. One simple strategy is to exchange the missing value for each 5 minute interval with an aggregated value over the distribution of intervals over days. First thought was to use the mode (the most common value) of steps per interval, but it turns out that the mode in all cases equals zero, so it seems a bit boring choice. The next idea was to use the median, which was implemented above.
 
-Mean number of steps per day after imputing missing values: `r medact_mean`.
-Median number of steps per day after imputing missing values: `r medact_median`.
+Mean number of steps per day after imputing missing values: 10476.07.
+Median number of steps per day after imputing missing values: 10395.
 
 
 ### Are there differences in activity patterns between weekdays and weekends?
-```{r weekdays, fig.width=6, fig.height=4, echo=TRUE}
 
+```r
 library(ggplot2)
 days <- weekdays(as.POSIXct.Date(medact$date))
 medact$daytype <- days == "Saturday" | days == "Sunday"
@@ -64,3 +65,6 @@ wday_act <- ddply(medact, .(interval,daytype), summarize, steps = mean(steps))
 
 ggplot(data=wday_act, aes(x=interval, y=steps, group=daytype)) + geom_line(aes(color=daytype))+ facet_wrap(~ daytype, nrow=2) +
 labs(title="Weekday vs weekend activity patterns")
+```
+
+![](PA1_template_files/figure-html/weekdays-1.png) 
