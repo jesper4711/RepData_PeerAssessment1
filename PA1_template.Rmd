@@ -34,19 +34,23 @@ plot(daily_pattern,type="l")
 Interval with max number of steps: `r max_int`.
 
 ### Imputing missing values 
-```{r missing_values, echo=TRUE}
+```{r missing_values, echo=TRUE, fig.height=3, fig.width=4}
 ind_na <- which(is.na(data$steps))
 num_missing <- length(ind_na)
 missing_intervals <- data$interval[ind_na]
-medsteps <- ddply(data, .(interval), transform, steps = median(steps, na.rm=TRUE))
+medsteps <- ddply(data, .(interval), summarize, steps = mean(steps, na.rm=TRUE))
 medact <- data
 medact[ind_na,1] <- medsteps[as.factor(data[ind_na,3]),2]
 dailyact <- ddply(medact, .(date), summarize, steps = sum(steps))
 medact_mean <- as.character(round(mean(dailyact$steps),digits=2))
-medact_median <- median(dailyact$steps)
+medact_median <- as.character(round(median(dailyact$steps)))
+hist(dailyact$steps, breaks=10, main="Histogram of steps/day", xlab="steps")
 
 ```
-Number of missing rows: `r num_missing`. There are many possibilities for imputing missing values. One simple strategy is to exchange the missing value for each 5 minute interval with an aggregated value over the distribution of intervals over days. First thought was to use the mode (the most common value) of steps per interval, but it turns out that the mode in all cases equals zero, so it seems a bit boring choice. The next idea was to use the median, which was implemented above.
+
+Number of missing rows: `r num_missing`.
+
+There are many possibilities for imputing missing values.One simple strategy is to exchange the missing value for each 5 minute interval with an aggregated value over the distribution of intervals over days. First thought was to use the mode (the most common value) of steps per interval, but it turns out that the mode in all cases equals zero, so it seems a bit boring choice. The next idea was to use the median, which has a similar effect to that of the mode, but finally settled for the mean, due to how the missing values appear in the data as a consecutive run of NAs.
 
 Mean number of steps per day after imputing missing values: `r medact_mean`.
 Median number of steps per day after imputing missing values: `r medact_median`.
@@ -64,3 +68,6 @@ wday_act <- ddply(medact, .(interval,daytype), summarize, steps = mean(steps))
 
 ggplot(data=wday_act, aes(x=interval, y=steps, group=daytype)) + geom_line(aes(color=daytype))+ facet_wrap(~ daytype, nrow=2) +
 labs(title="Weekday vs weekend activity patterns")
+```
+
+It seems like there is a difference in weekday vs weekend step count data. I am surprised to see activity start earlier on weekends than on weekdays, maybe this user is just that kind of person... not so for me. I went through the data and looked at each single day of the week to try to track down a possible bug in my code but looking at individual days the weekend/weekday result seemed to make sense. Still not excluding the possibility of a bug.
